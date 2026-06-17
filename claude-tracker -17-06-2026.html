@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Claude Usage Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root{color-scheme:light;--bg:#f5f6fa;--card:#fff;--border:#e4e7ec;--text:#111827;--muted:#6b7280;--accent:#cc785c;--blue:#5865f2;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444;--purple:#a855f7;--teal:#0ea5e9;--radius:12px;--shadow:0 1px 4px rgba(0,0,0,.07)}
+body.dark{color-scheme:dark;--bg:#0f1117;--card:#1a1d27;--border:#2a2d3a;--text:#e8eaf0;--muted:#8b8fa8;--shadow:0 1px 6px rgba(0,0,0,.4)}
+body.dark .plan-card{background:var(--card)}
+body.dark .plan-bar-track{background:#2a2d3a}
+body.dark .plan-extra-item{background:#12141e;border-color:var(--border)}
+body.dark .inner-tabs{background:#12141e}
+body.dark .inner-tab.active{background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,.5)}
+body.dark .countdown-card{background:linear-gradient(135deg,#3b3f9e,#6d28d9)}
+body.dark .flag-card.flag-off{background:#12141e}
+body.dark .flag-card.flag-on{background:#0d2218;border-color:#166534}
+body.dark .grant-item{background:#12141e}
+body.dark .grant-item.active-grant{background:#0d2218;border-color:#166534}
+body.dark .grant-item.no-grant{background:#12141e}
+body.dark .promo-card{background:#12141e}
+body.dark .promo-card.promo-new-card{background:#1c1500;border-color:#78350f}
+body.dark .modal{background:#1a1d27}
+body.dark .form-input,body.dark .form-select{background:#12141e;color:var(--text);border-color:var(--border)}
+body.dark .token-input-note{background:#12141e}
+body.dark .kpi{background:var(--card)}
+body.dark .card{background:var(--card)}
+body.dark .budget-ok{background:#0d2218;border-color:#166534;color:#4ade80}
+body.dark .budget-warn{background:#1c1500;border-color:#78350f;color:#fbbf24}
+body.dark .budget-crit{background:#1f0a0a;border-color:#7f1d1d;color:#f87171}
+body.dark header{background:var(--card);border-color:var(--border)}
+body.dark .tabs{background:var(--card);border-color:var(--border)}
+body.dark #toast{background:#e8eaf0;color:#111827}
+
+.dark-toggle{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
+.dark-toggle-label{font-size:11px;font-weight:600;color:var(--muted)}
+.toggle-track{width:36px;height:20px;background:#d1d5db;border-radius:10px;position:relative;transition:.25s;flex-shrink:0}
+body.dark .toggle-track{background:#5865f2}
+.toggle-thumb{width:16px;height:16px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+body.dark .toggle-thumb{left:18px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+header{background:var(--card);border-bottom:1px solid var(--border);padding:12px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#cc785c,#5865f2);border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px}
+.logo-name{font-size:15px;font-weight:700}
+.logo-sub{font-size:11px;color:var(--muted)}
+.header-right{display:flex;align-items:center;gap:10px}
+.live-pill{background:#dcfce7;color:#16a34a;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:5px}
+.live-pill::before{content:'';width:7px;height:7px;background:#16a34a;border-radius:50%;animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.last-refresh{font-size:11px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:.15s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#b5664a}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}.btn-outline:hover{background:var(--bg)}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-danger{background:#fee2e2;color:var(--red);border:1px solid #fecaca}.btn-danger:hover{background:#fecaca}
+.btn-teal{background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd}.btn-teal:hover{background:#bae6fd}
+.btn-icon{padding:7px;font-size:14px}
+
+.tabs{background:var(--card);border-bottom:1px solid var(--border);display:flex;padding:0 22px;overflow-x:auto;gap:2px}
+.tab{padding:11px 15px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:6px;transition:.15s}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover:not(.active){color:var(--text)}
+.tab-n{background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+
+.page{display:none;padding:22px;max-width:1100px;margin:0 auto}.page.active{display:block}
+
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi-icon{font-size:20px;margin-bottom:6px}
+.kpi-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px}
+.kpi-val{font-size:26px;font-weight:800;line-height:1}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px}
+
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:720px){.g2,.g3{grid-template-columns:1fr}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:700}
+.card-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.chart-box{height:200px;position:relative}
+.chart-box-tall{height:260px;position:relative}
+
+.sess-list{display:flex;flex-direction:column;gap:0}
+.sess-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px}
+.sess-item:last-child{border:none}
+.sess-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sess-body{flex:1;min-width:0}
+.sess-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+.sess-meta{font-size:10px;color:var(--muted);margin-top:1px}
+.badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;flex-shrink:0}
+
+.scroll{max-height:300px;overflow-y:auto;padding-right:2px}
+.scroll::-webkit-scrollbar{width:4px}
+.scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;padding:8px 10px;border-bottom:2px solid var(--border)}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:last-child td{border:none}
+.tbl tr:hover td{background:var(--bg)}
+
+.empty{text-align:center;color:var(--muted);padding:32px 16px;font-size:12px}
+.empty-icon{font-size:30px;display:block;margin-bottom:8px;opacity:.45}
+
+#toast{position:fixed;bottom:22px;right:22px;background:#1a1a2e;color:#fff;padding:10px 16px;border-radius:10px;font-size:12px;z-index:999;opacity:0;transform:translateY(6px);transition:.2s;pointer-events:none}
+#toast.show{opacity:1;transform:translateY(0)}
+
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.token-bar-wrap{background:var(--border);border-radius:6px;height:8px;overflow:hidden;margin:6px 0}
+.token-bar{height:8px;border-radius:6px;transition:.5s}
+
+.inner-tabs{display:flex;gap:2px;margin-bottom:18px;background:var(--bg);border-radius:10px;padding:3px;width:fit-content}
+.inner-tab{padding:7px 16px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:transparent;border-radius:8px;transition:.15s}
+.inner-tab.active{background:var(--card);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.inner-tab:hover:not(.active){color:var(--text)}
+.inner-page{display:none}.inner-page.active{display:block}
+
+.budget-ring-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px}
+.ring-label{font-size:11px;color:var(--muted);margin-top:6px;text-align:center}
+.ring-center{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-pct{font-size:26px;font-weight:800}
+.ring-word{font-size:11px;color:var(--muted)}
+
+.budget-status{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:10px;margin-bottom:10px;font-size:12px}
+.budget-ok  {background:#f0fdf4;border:1px solid #86efac;color:#15803d}
+.budget-warn{background:#fffbeb;border:1px solid #fcd34d;color:#92400e}
+.budget-crit{background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c}
+
+.countdown-card{background:linear-gradient(135deg,#5865f2,#a855f7);border-radius:var(--radius);padding:22px 24px;color:#fff;margin-bottom:14px}
+.countdown-label{font-size:11px;font-weight:700;opacity:.8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.countdown-time{font-size:38px;font-weight:800;letter-spacing:2px;font-variant-numeric:tabular-nums}
+.countdown-sub{font-size:12px;opacity:.75;margin-top:4px}
+.countdown-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.cd-box{background:rgba(255,255,255,.15);border-radius:8px;padding:10px;text-align:center}
+.cd-num{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.cd-unit{font-size:10px;opacity:.7;margin-top:2px}
+
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.plan-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow);margin-bottom:16px}
+.plan-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.plan-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.plan-badge{background:linear-gradient(135deg,#5865f2,#a855f7);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.plan-updated{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.plan-section{margin-bottom:14px}
+.plan-section-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px}
+.plan-row{margin-bottom:10px}
+.plan-row-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:5px}
+.plan-row-label{font-size:13px;font-weight:600;color:var(--text)}
+.plan-row-reset{font-size:11px;color:var(--muted)}
+.plan-row-pct{font-size:13px;font-weight:700;color:var(--blue)}
+.plan-bar-track{background:#e8eaf0;border-radius:6px;height:9px;overflow:hidden}
+.plan-bar-fill{height:9px;border-radius:6px;background:linear-gradient(90deg,#5865f2,#818cf8);transition:.6s}
+.plan-bar-fill.warn{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.plan-bar-fill.crit{background:linear-gradient(90deg,#ef4444,#f87171)}
+.plan-divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+.plan-extras{display:flex;gap:12px;flex-wrap:wrap}
+.plan-extra-item{display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 15px;flex:1;min-width:140px}
+.plan-extra-label{font-size:11px;color:var(--muted);margin-bottom:3px}
+.plan-extra-val{font-size:18px;font-weight:800;color:var(--text)}
+.plan-extra-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.edit-plan-btn{font-size:11px;color:var(--accent);cursor:pointer;background:none;border:none;font-weight:600;padding:0;text-decoration:underline}
+
+.grant-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:var(--bg)}
+.grant-item.active-grant{border-color:#86efac;background:#f0fdf4}
+.grant-item.no-grant{border-color:var(--border);background:var(--bg);opacity:.7}
+.grant-app-icon{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#5865f2,#cc785c);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.grant-name{font-size:13px;font-weight:700}
+.grant-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.grant-tier{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase}
+.gt-full{background:#dcfce7;color:#15803d}
+.gt-read{background:#dbeafe;color:#1d4ed8}
+.gt-click{background:#fef9c3;color:#92400e}
+
+.flag-card{border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.flag-card.flag-on{border-color:#86efac;background:#f0fdf4}
+.flag-card.flag-off{background:var(--bg)}
+.flag-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.flag-dot.on{background:var(--green)}
+.flag-dot.off{background:var(--border)}
+.flag-name{font-size:12px;font-weight:700}
+.flag-desc{font-size:11px;color:var(--muted);margin-top:2px}
+
+.promo-card{border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;background:var(--bg);margin-bottom:8px}
+.promo-card.promo-new-card{border-color:#fcd34d;background:#fffbeb}
+.promo-icon-lg{font-size:26px;flex-shrink:0}
+.promo-title{font-size:13px;font-weight:700;margin-bottom:3px}
+.promo-desc{font-size:12px;color:var(--muted)}
+.promo-new-badge{background:#f59e0b;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px}
+
+.perm-tier{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase}
+.tier-full{background:#dcfce7;color:#15803d}
+.tier-read{background:#dbeafe;color:#1d4ed8}
+.tier-click{background:#fef9c3;color:#92400e}
+.tier-denied{background:#fee2e2;color:#b91c1c}
+.sdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.s-granted{background:var(--green)}.s-revoked{background:var(--red)}.s-pending{background:var(--yellow)}
+
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--card);border-radius:var(--radius);padding:24px;width:400px;max-width:94vw;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.modal-title{font-size:14px;font-weight:700;margin-bottom:14px}
+.form-row{margin-bottom:11px}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-label{font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.form-input,.form-select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--bg);color:var(--text);outline:none;transition:.15s}
+.form-input:focus,.form-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(204,120,92,.13)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+
+.token-input-note{font-size:11px;color:var(--muted);background:var(--bg);border-radius:8px;padding:10px;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">C</div>
+    <div>
+      <div class="logo-name">Claude Usage Tracker</div>
+      <div class="logo-sub">Sessions · Tokens · Machine Access · Promotions</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="live-pill">Live</span>
+    <span class="last-refresh" id="last-refresh">Loading…</span>
+    <div class="dark-toggle" onclick="toggleDark()" title="Toggle dark mode">
+      <span class="dark-toggle-label" id="dark-label">☀️</span>
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+    </div>
+    <button class="btn btn-outline btn-icon" onclick="refreshAll()" title="Refresh all data">🔄</button>
+    <button class="btn btn-primary" onclick="openPermModal()">＋ Permission</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+  <button class="tab" onclick="switchTab('tokens')">🪙 Tokens</button>
+  <button class="tab" onclick="switchTab('sessions')">🕐 Sessions <span class="tab-n" id="sess-badge">47</span></button>
+  <button class="tab" onclick="switchTab('machine')">🖥️ Local Machine</button>
+  <button class="tab" onclick="switchTab('permissions')">🔐 Permissions <span class="tab-n" id="perm-badge">0</span></button>
+  <button class="tab" onclick="switchTab('categories')">🏷️ Categories</button>
+</div>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="plan-card" id="plan-usage-card">
+    <div class="plan-header">
+      <div class="plan-title">
+        Plan usage limits
+        <span class="plan-badge" id="plan-name-badge">Pro</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="plan-updated" id="plan-last-updated">⟳ Last updated: just now</div>
+        <button class="edit-plan-btn" onclick="openPlanModal()">✏️ Edit</button>
+      </div>
+    </div>
+    <div class="plan-section">
+      <div class="plan-section-title">Current session</div>
+      <div class="plan-row">
+        <div class="plan-row-head">
+          <div>
+            <div class="plan-row-label">Usage this session</div>
+            <div class="plan-row-reset" id="plan-session-reset">Resets in 3 hr 9 min</div>
+          </div>
+          <div class="plan-row-pct" id="plan-session-pct">41% used</div>
+        </div>
+        <div class="plan-bar-track">
+          <div class="plan-bar-fill" id="plan-session-bar" style="width:41%"></div>
+        </div>
+      </div>
+    </div>
+    <hr class="plan-divider"/>
+    <div class="plan-section">
+      <div class="plan-section-title">Weekly limits</div>
+      <div class="plan-row">
+        <div class="plan-row-head">
+          <div>
+            <div class="plan-row-label">All models</div>
+            <div class="plan-row-reset" id="plan-weekly-reset">Resets Thu 3:00 PM</div>
+          </div>
+          <div class="plan-row-pct" id="plan-weekly-pct">16% used</div>
+        </div>
+        <div class="plan-bar-track">
+          <div class="plan-bar-fill" id="plan-weekly-bar" style="width:16%"></div>
+        </div>
+      </div>
+    </div>
+    <hr class="plan-divider"/>
+    <div class="plan-section" style="margin-bottom:0">
+      <div class="plan-section-title">Additional features</div>
+      <div class="plan-extras">
+        <div class="plan-extra-item">
+          <div class="plan-extra-label">Daily routine runs</div>
+          <div class="plan-extra-val"><span id="plan-routines-used">0</span> / <span id="plan-routines-max">5</span></div>
+          <div class="plan-extra-sub" id="plan-routines-sub">You haven't run any routines yet</div>
+          <div class="plan-bar-track" style="margin-top:7px">
+            <div class="plan-bar-fill" id="plan-routines-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="plan-extra-item">
+          <div class="plan-extra-label">Sessions this week</div>
+          <div class="plan-extra-val" id="plan-sess-week">—</div>
+          <div class="plan-extra-sub">Claude Desktop sessions</div>
+        </div>
+        <div class="plan-extra-item">
+          <div class="plan-extra-label">Session resets in</div>
+          <div class="plan-extra-val" id="plan-sess-countdown" style="color:var(--blue);font-size:15px">—</div>
+          <div class="plan-extra-sub" id="plan-sess-countdown-sub">Live countdown</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-icon">🕐</div><div class="kpi-label">Total Sessions</div><div class="kpi-val" id="k-total" style="color:var(--blue)">48</div><div class="kpi-sub">All time</div></div>
+    <div class="kpi"><div class="kpi-icon">🪙</div><div class="kpi-label">Est. Tokens</div><div class="kpi-val" id="k-tokens" style="color:var(--purple)">—</div><div class="kpi-sub">Input + output</div></div>
+    <div class="kpi"><div class="kpi-icon">🎯</div><div class="kpi-label">Unique Topics</div><div class="kpi-val" id="k-unique" style="color:var(--accent)">—</div><div class="kpi-sub">Distinct sessions</div></div>
+    <div class="kpi"><div class="kpi-icon">🖥️</div><div class="kpi-label">Active Grants</div><div class="kpi-val" id="k-grants" style="color:var(--teal)">—</div><div class="kpi-sub">Machine access</div></div>
+    <div class="kpi"><div class="kpi-icon">🔐</div><div class="kpi-label">Permissions</div><div class="kpi-val" id="k-perms" style="color:var(--yellow)">0</div><div class="kpi-sub">Apps logged</div></div>
+    <div class="kpi"><div class="kpi-icon">🎁</div><div class="kpi-label">Promotions</div><div class="kpi-val" id="k-promos" style="color:var(--green)">—</div><div class="kpi-sub">New features</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-head"><div><div class="card-title">Sessions by Category</div><div class="card-sub">Auto-classified</div></div></div>
+      <div class="chart-box"><canvas id="chart-cat"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div><div class="card-title">Token Usage by Category</div><div class="card-sub">Estimated consumption</div></div></div>
+      <div class="chart-box"><canvas id="chart-tokens-cat"></canvas></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-head"><div class="card-title">Recent Sessions</div></div>
+      <div class="scroll" id="dash-recent"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Top Topics</div></div>
+      <div id="dash-topics"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOKENS -->
+<div class="page" id="page-tokens">
+  <div class="inner-tabs">
+    <button class="inner-tab active" onclick="switchInnerTab('overview')">📊 Overview</button>
+    <button class="inner-tab" onclick="switchInnerTab('budget')">⚖️ Budget &amp; Reset</button>
+  </div>
+
+  <div class="inner-page active" id="inner-overview">
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-icon">📥</div><div class="kpi-label">Input Tokens</div><div class="kpi-val" id="tk-input" style="color:var(--blue)">—</div><div class="kpi-sub">Estimated sent</div></div>
+      <div class="kpi"><div class="kpi-icon">📤</div><div class="kpi-label">Output Tokens</div><div class="kpi-val" id="tk-output" style="color:var(--purple)">—</div><div class="kpi-sub">Estimated received</div></div>
+      <div class="kpi"><div class="kpi-icon">🪙</div><div class="kpi-label">Total Tokens</div><div class="kpi-val" id="tk-total" style="color:var(--accent)">—</div><div class="kpi-sub">Combined</div></div>
+      <div class="kpi"><div class="kpi-icon">💰</div><div class="kpi-label">Est. Cost</div><div class="kpi-val" id="tk-cost" style="color:var(--green)">—</div><div class="kpi-sub">Sonnet pricing</div></div>
+      <div class="kpi"><div class="kpi-icon">📊</div><div class="kpi-label">Avg / Session</div><div class="kpi-val" id="tk-avg" style="color:var(--teal)">—</div><div class="kpi-sub">Tokens per session</div></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">Token Breakdown by Category</div><div class="card-sub">Estimated usage per topic area</div></div></div>
+        <div class="chart-box-tall"><canvas id="chart-tokens-bar"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div><div class="card-title">Input vs Output Split</div><div class="card-sub">Estimated ratio</div></div>
+          <button class="btn btn-outline btn-sm" onclick="openTokenModal()">✏️ Log Real Tokens</button>
+        </div>
+        <div class="chart-box-tall"><canvas id="chart-io-split"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div><div class="card-title">Token Usage per Category</div><div class="card-sub">Ranked by estimated consumption</div></div></div>
+      <div id="token-breakdown-table"></div>
+    </div>
+    <div style="margin-top:12px;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:11px;color:var(--muted)">
+      <strong>ℹ️ Estimation note:</strong> Token counts are estimated based on typical session complexity per category.
+      Daily ≈ 400 · Productivity ≈ 1,500 · Creative ≈ 2,500 · Research ≈ 3,000 · Management ≈ 2,000 · Technical ≈ 4,000.
+      Click "Log Real Tokens" to override with exact values from your Claude API dashboard.
+    </div>
+  </div>
+
+  <div class="inner-page" id="inner-budget">
+    <div class="countdown-card">
+      <div class="countdown-label">⏱ Next Session Reset</div>
+      <div class="countdown-time" id="cd-display">—</div>
+      <div class="countdown-sub" id="cd-sub">Set a reset time below to start counting down</div>
+      <div class="countdown-row">
+        <div class="cd-box"><div class="cd-num" id="cd-h">--</div><div class="cd-unit">HOURS</div></div>
+        <div class="cd-box"><div class="cd-num" id="cd-m">--</div><div class="cd-unit">MINS</div></div>
+        <div class="cd-box"><div class="cd-num" id="cd-s">--</div><div class="cd-unit">SECS</div></div>
+        <div class="cd-box"><div class="cd-num" id="cd-pct">--%</div><div class="cd-unit">ELAPSED</div></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card" style="display:flex;flex-direction:column;align-items:center">
+        <div class="card-head" style="width:100%"><div><div class="card-title">Token Budget Gauge</div><div class="card-sub" id="gauge-sub">Used vs available</div></div></div>
+        <div style="position:relative;width:200px;height:200px">
+          <canvas id="chart-gauge" width="200" height="200"></canvas>
+          <div class="ring-center" style="inset:0;position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <div class="ring-pct" id="gauge-pct-text" style="color:var(--accent)">—</div>
+            <div class="ring-word">used</div>
+          </div>
+        </div>
+        <div class="ring-label" id="gauge-label">Configure budget below</div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">Token Allowance</div></div>
+        <div id="budget-breakdown"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">⚙️ Budget &amp; Reset Settings</div><div class="card-sub">Configure your Claude token plan and session window</div></div>
+        <button class="btn btn-primary btn-sm" onclick="saveBudgetSettings()">Save Settings</button>
+      </div>
+      <div class="settings-grid">
+        <div class="form-row">
+          <label class="form-label">Total Token Budget</label>
+          <select class="form-select" id="b-budget">
+            <option value="100000">100k — Claude.ai Free</option>
+            <option value="500000">500k — Claude.ai Pro</option>
+            <option value="1000000">1M — API (Custom)</option>
+            <option value="5000000">5M — API (Custom)</option>
+            <option value="custom">Custom…</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Custom Budget (tokens)</label>
+          <input class="form-input" id="b-custom" type="number" placeholder="e.g. 250000" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Reset Interval</label>
+          <select class="form-select" id="b-interval">
+            <option value="5">Every 5 hours (Claude.ai)</option>
+            <option value="24">Every 24 hours (Daily)</option>
+            <option value="168">Every 7 days (Weekly)</option>
+            <option value="720">Every 30 days (Monthly)</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Session Start Time</label>
+          <input class="form-input" id="b-start" type="datetime-local" />
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:11px;color:var(--muted)">
+        💡 Claude.ai resets usage approximately every 5 hours. API plans reset monthly based on your billing cycle.
+        Set <strong>Session Start Time</strong> to when you began your current Claude session.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SESSIONS -->
+<div class="page" id="page-sessions">
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">All Sessions</div><div class="card-sub" id="sess-subtitle">Loading…</div></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="search-box" class="form-input" style="width:170px" placeholder="🔍 Search…" oninput="renderSessionsTable()"/>
+        <select class="form-select" style="width:130px" id="cat-filter" onchange="renderSessionsTable()">
+          <option value="">All categories</option>
+          <option>Daily</option><option>Technical</option><option>Creative</option>
+          <option>Management</option><option>Research</option><option>Productivity</option><option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div id="sess-table-wrap" style="overflow-x:auto"></div>
+  </div>
+</div>
+
+<!-- LOCAL MACHINE -->
+<div class="page" id="page-machine">
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">🖥️ Currently Active Grants</div><div class="card-sub">Apps Claude can control right now</div></div>
+        <button class="btn btn-teal btn-sm" onclick="refreshGrants()">🔄 Refresh</button>
+      </div>
+      <div id="active-grants-list">
+        <div class="empty"><span class="empty-icon">🖥️</span>Checking machine access…</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div><div class="card-title">🔑 Permission Flags</div><div class="card-sub">Special capability grants</div></div></div>
+      <div id="flags-list" style="display:flex;flex-direction:column;gap:8px;margin-top:4px"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-head">
+      <div><div class="card-title">🎁 Local Machine Promotions</div><div class="card-sub">Claude desktop capabilities & feature unlocks on this machine</div></div>
+      <button class="btn btn-primary btn-sm" onclick="openPromoModal()">＋ Add</button>
+    </div>
+    <div id="promo-list"></div>
+  </div>
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">📋 Access Request History</div><div class="card-sub">All permission requests made in Cowork sessions</div></div>
+    </div>
+    <div id="access-history"></div>
+  </div>
+</div>
+
+<!-- PERMISSIONS -->
+<div class="page" id="page-permissions">
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">Logged App Permissions</div><div class="card-sub">All apps Claude was authorized to control</div></div>
+      <button class="btn btn-primary btn-sm" onclick="openPermModal()">＋ Add</button>
+    </div>
+    <div id="perm-wrap"></div>
+  </div>
+</div>
+
+<!-- CATEGORIES -->
+<div class="page" id="page-categories">
+  <div class="g3" id="cat-cards"></div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-bg" id="modal-plan">
+  <div class="modal" style="width:460px">
+    <div class="modal-title">✏️ Update Plan Usage</div>
+    <div style="font-size:11px;color:var(--muted);background:var(--bg);border-radius:8px;padding:10px;margin-bottom:14px">
+      Copy your values from <strong>Claude → Settings → Usage</strong> and paste them here.
+    </div>
+    <div class="form-row">
+      <label class="form-label">Plan</label>
+      <select class="form-select" id="pl-plan">
+        <option value="Pro">Pro</option>
+        <option value="Free">Free</option>
+        <option value="Team">Team</option>
+        <option value="Enterprise">Enterprise</option>
+      </select>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row">
+        <label class="form-label">Current Session % Used</label>
+        <input class="form-input" id="pl-sess-pct" type="number" min="0" max="100" placeholder="41"/>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Session Resets In</label>
+        <input class="form-input" id="pl-sess-reset" placeholder="3 hr 9 min"/>
+      </div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row">
+        <label class="form-label">Weekly All-Models % Used</label>
+        <input class="form-input" id="pl-week-pct" type="number" min="0" max="100" placeholder="16"/>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Weekly Resets</label>
+        <input class="form-input" id="pl-week-reset" placeholder="Thu 3:00 PM"/>
+      </div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row">
+        <label class="form-label">Routine Runs Used</label>
+        <input class="form-input" id="pl-routines-used" type="number" min="0" placeholder="0"/>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Routine Runs Max</label>
+        <input class="form-input" id="pl-routines-max" type="number" min="1" placeholder="5"/>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModals()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePlanUsage()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-perm">
+  <div class="modal">
+    <div class="modal-title">🔐 Log App Permission</div>
+    <div class="form-row"><label class="form-label">Application</label><input class="form-input" id="p-app" placeholder="e.g. Notepad, Chrome, File Explorer"/></div>
+    <div class="form-row-2">
+      <div class="form-row"><label class="form-label">Access Tier</label>
+        <select class="form-select" id="p-tier">
+          <option value="full">Full – all actions</option>
+          <option value="read">Read – screenshots</option>
+          <option value="click">Click – left-click</option>
+          <option value="denied">Denied</option>
+        </select>
+      </div>
+      <div class="form-row"><label class="form-label">Status</label>
+        <select class="form-select" id="p-status">
+          <option value="granted">Granted</option>
+          <option value="pending">Pending</option>
+          <option value="revoked">Revoked</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><label class="form-label">Reason / Context</label><input class="form-input" id="p-reason" placeholder="Why was access needed?"/></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModals()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePerm()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-token">
+  <div class="modal">
+    <div class="modal-title">🪙 Log Real Token Usage</div>
+    <div class="token-input-note">Find exact values in your <strong>Claude API dashboard → Usage</strong>. These override the estimates for this session.</div>
+    <div class="form-row-2">
+      <div class="form-row"><label class="form-label">Input Tokens</label><input class="form-input" id="t-input" type="number" placeholder="e.g. 45000"/></div>
+      <div class="form-row"><label class="form-label">Output Tokens</label><input class="form-input" id="t-output" type="number" placeholder="e.g. 22000"/></div>
+    </div>
+    <div class="form-row"><label class="form-label">Period Label</label><input class="form-input" id="t-label" placeholder="e.g. June 2026"/></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModals()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTokens()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-promo">
+  <div class="modal">
+    <div class="modal-title">🎁 Add Local Promotion / Feature</div>
+    <div class="form-row"><label class="form-label">Title</label><input class="form-input" id="pr-title" placeholder="e.g. Computer Use enabled"/></div>
+    <div class="form-row"><label class="form-label">Description</label><input class="form-input" id="pr-desc" placeholder="What capability was unlocked?"/></div>
+    <div class="form-row-2">
+      <div class="form-row"><label class="form-label">Icon / Emoji</label><input class="form-input" id="pr-icon" placeholder="🖥️" maxlength="4"/></div>
+      <div class="form-row"><label class="form-label">Type</label>
+        <select class="form-select" id="pr-type">
+          <option value="feature">New Feature</option>
+          <option value="access">Access Granted</option>
+          <option value="update">Update</option>
+          <option value="integration">Integration</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModals()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePromo()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SEED = [
+  {id:"local_968b9c63",name:"Book reference pictures list",status:"idle"},
+  {id:"local_97801c64",name:"Mind map of chats and projects",status:"idle"},
+  {id:"local_e9e06e2a",name:"Product brainstorming pictures",status:"idle"},
+  {id:"local_2eac5340",name:"Daily action items",status:"idle"},
+  {id:"local_27e80c4e",name:"Android time management app",status:"idle"},
+  {id:"local_948aa279",name:"Daily action items",status:"idle"},
+  {id:"local_7acf6970",name:"Daily action items",status:"idle"},
+  {id:"local_c1bb5a29",name:"Daily action items",status:"idle"},
+  {id:"local_88159d51",name:"Daily action items",status:"idle"},
+  {id:"local_0e9f4736",name:"Canva and Gemini next steps",status:"idle"},
+  {id:"local_0d88d3f7",name:"Folder contents summary",status:"idle"},
+  {id:"local_362d4b02",name:"Arabic viral app concept",status:"idle"},
+  {id:"local_fd3041ce",name:"Daily action items",status:"idle"},
+  {id:"local_38bf41b3",name:"RFP file upload error",status:"idle"},
+  {id:"local_774e7178",name:"Daily action items",status:"idle"},
+  {id:"local_9022169f",name:"Platform feature requests",status:"idle"},
+  {id:"local_5834961b",name:"Pre-sales assessment web application",status:"idle"},
+  {id:"local_cd975475",name:"Project documentation review",status:"idle"},
+  {id:"local_8cc6b984",name:"Technical presentation example",status:"idle"},
+  {id:"local_dc34c5ff",name:"Files to project",status:"idle"},
+  {id:"local_85eaec36",name:"Chat information extraction",status:"idle"},
+  {id:"local_b1165163",name:"Daily action items",status:"idle"},
+  {id:"local_61d94b11",name:"Daily action items",status:"idle"},
+  {id:"local_69393cd9",name:"Daily action items",status:"idle"},
+  {id:"local_d02f87d6",name:"Daily action items",status:"idle"},
+  {id:"local_cfd7e395",name:"Daily action items",status:"idle"},
+  {id:"local_3767aa87",name:"Daily action items",status:"idle"},
+  {id:"local_6657d129",name:"Daily action items",status:"idle"},
+  {id:"local_abb77545",name:"Daily action items",status:"idle"},
+  {id:"local_a18a81b8",name:"What needs my attention",status:"idle"},
+  {id:"local_a4937603",name:"Project work progress update",status:"idle"},
+  {id:"local_672fc28d",name:"Daily action items",status:"idle"},
+  {id:"local_870973d4",name:"Daily action items",status:"idle"},
+  {id:"local_2a239a86",name:"Daily action items",status:"idle"},
+  {id:"local_fe16b4c6",name:"Daily action items",status:"idle"},
+  {id:"local_e77f5916",name:"Ancient world activity book",status:"idle"},
+  {id:"local_54919ce2",name:"Daily action items",status:"idle"},
+  {id:"local_0407a5d6",name:"Daily action items",status:"idle"},
+  {id:"local_6edc2487",name:"Daily action items",status:"idle"},
+  {id:"local_bea865a3",name:"Daily action items",status:"idle"},
+  {id:"local_7a9ca494",name:"Book illustrations",status:"idle"},
+  {id:"local_767fdfba",name:"Daily action items",status:"idle"},
+  {id:"local_7a8ccb4b",name:"Format markdown files into Word document",status:"idle"},
+  {id:"local_42d3976f",name:"Daily action items",status:"idle"},
+  {id:"local_10616570",name:"Create project progress tracking diagram",status:"idle"},
+  {id:"local_62d362bd",name:"Daily action items",status:"idle"},
+  {id:"local_29806634",name:"Daily action items",status:"idle"},
+  {id:"local_af6eec59",name:"Claude usage tracker (current)",status:"active"},
+];
+
+function cat(name) {
+  const n = name.toLowerCase();
+  if (n.includes('daily action')||n.includes('what needs my attention')) return 'Daily';
+  if (n.includes('app')||n.includes('android')||n.includes('web application')||n.includes('tracker')||n.includes('pre-sales')||n.includes('presentation')) return 'Technical';
+  if (n.includes('book')||n.includes('illustration')||n.includes('ancient')||n.includes('picture')||n.includes('art')) return 'Creative';
+  if (n.includes('project')||n.includes('progress')||n.includes('documentation')||n.includes('rfp')||n.includes('file')) return 'Management';
+  if (n.includes('brainstorm')||n.includes('concept')||n.includes('mind map')||n.includes('arabic viral')||n.includes('canva')||n.includes('platform feature')||n.includes('next steps')||n.includes('gemini')) return 'Research';
+  if (n.includes('chat')||n.includes('extract')||n.includes('summary')||n.includes('format')||n.includes('markdown')||n.includes('word')) return 'Productivity';
+  return 'Other';
+}
+
+const COLORS = {
+  Daily:       {bg:'#ede9fe',text:'#6d28d9',dot:'#7c3aed'},
+  Technical:   {bg:'#dcfce7',text:'#15803d',dot:'#16a34a'},
+  Creative:    {bg:'#fce7f3',text:'#9d174d',dot:'#db2777'},
+  Management:  {bg:'#ffedd5',text:'#9a3412',dot:'#ea580c'},
+  Research:    {bg:'#fef9c3',text:'#92400e',dot:'#d97706'},
+  Productivity:{bg:'#dbeafe',text:'#1d4ed8',dot:'#2563eb'},
+  Other:       {bg:'#f3f4f6',text:'#4b5563',dot:'#6b7280'},
+};
+const EMOJIS = {Daily:'📋',Technical:'⚙️',Creative:'🎨',Management:'📁',Research:'🔬',Productivity:'⚡',Other:'📎'};
+const TOKEN_EST = {Daily:400,Technical:4000,Creative:2500,Management:2000,Research:3000,Productivity:1500,Other:1000};
+const INPUT_RATIO = 0.6;
+
+const SKEY = 'ct_state_v3';
+let sessions = [...SEED];
+let permissions = [];
+let promotions = [];
+let tokenOverride = null;
+let machineGrants = { allowedApps: [], grantFlags: { clipboardRead: false, clipboardWrite: false, systemKeyCombos: false } };
+let accessHistory = [];
+
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SKEY)||'{}');
+    permissions   = s.permissions   || [];
+    promotions    = s.promotions    || seedPromos();
+    tokenOverride = s.tokenOverride || null;
+    accessHistory = s.accessHistory || seedHistory();
+  } catch(e) { promotions = seedPromos(); accessHistory = seedHistory(); }
+}
+
+function saveState() {
+  localStorage.setItem(SKEY, JSON.stringify({ permissions, promotions, tokenOverride, accessHistory }));
+}
+
+function seedPromos() {
+  return [
+    {id:uid(),icon:'🖥️',title:'Computer Use (Cowork)',desc:'Claude can take screenshots and control apps on your Windows machine via Cowork.',type:'feature',ts:'Jun 2026',isNew:true},
+    {id:uid(),icon:'🔌',title:'Plugin System Active',desc:'Cowork plugins connected — Gmail, Canva, PDF Tools, and more installed on this machine.',type:'integration',ts:'Jun 2026',isNew:true},
+    {id:uid(),icon:'📋',title:'Session Tracking Enabled',desc:'All 47+ Claude Desktop sessions are now visible and tracked in this dashboard.',type:'feature',ts:'Jun 2026',isNew:false},
+    {id:uid(),icon:'🎨',title:'Canva MCP Connected',desc:'Claude can create and edit Canva designs directly from Cowork on this machine.',type:'integration',ts:'Jun 2026',isNew:false},
+    {id:uid(),icon:'📄',title:'PDF Tools MCP Active',desc:'Fill, sign, merge, split, and extract PDFs natively from Claude Desktop.',type:'integration',ts:'Jun 2026',isNew:false},
+    {id:uid(),icon:'✉️',title:'Gmail MCP Connected',desc:'Claude can read, label, search and draft emails through your Gmail account.',type:'integration',ts:'Jun 2026',isNew:false},
+  ];
+}
+
+function seedHistory() {
+  return [
+    {ts:'Jun 15, 2026 – 10:42',app:'Claude Desktop Tracker',tier:'full',result:'granted',reason:'Build usage tracker artifact'},
+    {ts:'Jun 15, 2026 – 09:11',app:'File Explorer',tier:'full',result:'granted',reason:'Access workspace folder'},
+    {ts:'Jun 14, 2026 – 16:30',app:'Google Chrome',tier:'read',result:'granted',reason:'Read page content via Claude in Chrome'},
+    {ts:'Jun 13, 2026 – 11:05',app:'Notepad++',tier:'click',result:'granted',reason:'Open files for editing'},
+  ];
+}
+
+function isDark() { return document.body.classList.contains('dark'); }
+function chartTextColor() { return isDark() ? '#8b8fa8' : '#6b7280'; }
+function chartGridColor() { return isDark() ? '#2a2d3a' : '#f0f0f0'; }
+function chartBorderColor() { return isDark() ? '#1a1d27' : '#ffffff'; }
+
+function computeTokens() {
+  if (tokenOverride) {
+    const inp = tokenOverride.input, out = tokenOverride.output;
+    return { input: inp, output: out, total: inp+out, cost: ((inp/1e6)*3 + (out/1e6)*15).toFixed(4) };
+  }
+  let total = 0;
+  for (const s of sessions) total += TOKEN_EST[cat(s.name)] || 1000;
+  const inp = Math.round(total * INPUT_RATIO);
+  const out = Math.round(total * (1 - INPUT_RATIO));
+  return { input: inp, output: out, total, cost: ((inp/1e6)*3 + (out/1e6)*15).toFixed(4) };
+}
+
+function catCounts() {
+  const m = {};
+  for (const s of sessions) { const c = cat(s.name); m[c] = (m[c]||0)+1; }
+  return m;
+}
+
+function catTokens() {
+  const m = {};
+  for (const s of sessions) { const c = cat(s.name); m[c] = (m[c]||0)+(TOKEN_EST[c]||1000); }
+  return m;
+}
+
+function fmt(n) {
+  if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+'k';
+  return String(n);
+}
+
+async function refreshSessions() {
+  try {
+    const r = await window.cowork.callMcpTool('mcp__session_info__list_sessions',{limit:60});
+    const text = r.content?.[0]?.text || '';
+    const parsed = parseSessions(text);
+    if (parsed.length > 0) sessions = parsed;
+  } catch(e) {}
+}
+
+async function refreshGrants() {
+  try {
+    const r = await window.cowork.callMcpTool('mcp__computer-use__list_granted_applications',{});
+    const raw = r.structuredContent ?? JSON.parse(r.content?.[0]?.text||'{}');
+    machineGrants = raw;
+  } catch(e) { machineGrants = { allowedApps: [], grantFlags: {} }; }
+  renderMachinePage();
+  toast('🖥️ Machine grants refreshed');
+}
+
+function parseSessions(text) {
+  const lines = text.split('\n'), out = [];
+  for (const line of lines) {
+    const m = line.match(/local_([a-z0-9\-]+)\s+"([^"]+)"\s+\(([^,)]+)/);
+    if (m) out.push({ id:'local_'+m[1], name:m[2], status:m[3].trim() });
+  }
+  return out.length > 0 ? out : sessions;
+}
+
+async function refreshAll() {
+  document.getElementById('last-refresh').textContent = 'Refreshing…';
+  await Promise.allSettled([refreshSessions(), refreshGrants()]);
+  renderAll();
+  document.getElementById('last-refresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  toast('✅ All data refreshed');
+}
+
+let charts = {};
+
+function renderAll() {
+  const t = computeTokens();
+  document.getElementById('k-tokens').textContent = fmt(t.total);
+  document.getElementById('k-grants').textContent = (machineGrants.allowedApps||[]).length;
+  document.getElementById('k-promos').textContent = promotions.length;
+  document.getElementById('sess-badge').textContent = sessions.length;
+  document.getElementById('perm-badge').textContent = permissions.filter(p=>p.status==='granted').length;
+  document.getElementById('k-total').textContent = sessions.length;
+  document.getElementById('k-unique').textContent = new Set(sessions.map(s=>s.name)).size;
+  document.getElementById('k-perms').textContent = permissions.filter(p=>p.status==='granted').length;
+  document.getElementById('sess-subtitle').textContent = sessions.length + ' sessions from Claude Desktop';
+
+  renderDashboardData();
+  renderTokenData();
+  renderSessionsTable();
+  renderMachinePage();
+  renderPermTable();
+  renderCategoryCards();
+  renderVisibleCharts();
+}
+
+function renderVisibleCharts() {
+  const activeTab = document.querySelector('.page.active')?.id || 'page-dashboard';
+  if (activeTab === 'page-dashboard') {
+    try { renderDashboardCharts(); } catch(e) { console.warn('Chart error:', e); }
+  } else if (activeTab === 'page-tokens') {
+    const activeInner = document.querySelector('.inner-page.active')?.id || 'inner-overview';
+    if (activeInner === 'inner-overview') {
+      try { renderTokenCharts(); } catch(e) { console.warn('Token chart error:', e); }
+    } else if (activeInner === 'inner-budget') {
+      try { renderBudgetPage(); } catch(e) { console.warn('Budget chart error:', e); }
+    }
+  }
+}
+
+function renderDashboardData() {
+  const el = document.getElementById('dash-recent');
+  el.innerHTML = sessions.slice(0,10).map(s => {
+    const c = cat(s.name), col = COLORS[c];
+    return `<div class="sess-item">
+      <div class="sess-dot" style="background:${col.dot}"></div>
+      <div class="sess-body"><div class="sess-name">${esc(s.name)}</div><div class="sess-meta">${s.id.slice(0,18)}… · ${s.status}</div></div>
+      <span class="badge" style="background:${col.bg};color:${col.text}">${c}</span>
+    </div>`;
+  }).join('');
+
+  const topicMap = {};
+  for (const s of sessions) topicMap[s.name] = (topicMap[s.name]||0)+1;
+  const tops = Object.entries(topicMap).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const maxV = tops[0]?.[1]||1;
+  document.getElementById('dash-topics').innerHTML = tops.map(([name,count]) => {
+    const c = cat(name), col = COLORS[c];
+    return `<div style="margin-bottom:9px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+        <span style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">${esc(name)}</span>
+        <span style="color:var(--muted);flex-shrink:0;margin-left:8px">${count}×</span>
+      </div>
+      <div style="background:var(--border);border-radius:4px;height:5px">
+        <div style="background:${col.dot};width:${Math.round(count/maxV*100)}%;height:5px;border-radius:4px"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderDashboardCharts() {
+  const cc = catCounts(), ct = catTokens(), cats = Object.keys(COLORS);
+  const legendLabels = { font:{size:11}, padding:9, boxWidth:11, color: chartTextColor() };
+
+  destroyChart('chart-cat');
+  charts['chart-cat'] = new Chart(document.getElementById('chart-cat').getContext('2d'), {
+    type:'doughnut',
+    data:{ labels:cats, datasets:[{ data:cats.map(c=>cc[c]||0), backgroundColor:cats.map(c=>COLORS[c].dot), borderWidth:2, borderColor: chartBorderColor() }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels: legendLabels } }, cutout:'60%' }
+  });
+
+  destroyChart('chart-tokens-cat');
+  charts['chart-tokens-cat'] = new Chart(document.getElementById('chart-tokens-cat').getContext('2d'), {
+    type:'doughnut',
+    data:{ labels:cats, datasets:[{ data:cats.map(c=>ct[c]||0), backgroundColor:cats.map(c=>COLORS[c].dot), borderWidth:2, borderColor: chartBorderColor() }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels: legendLabels } }, cutout:'60%' }
+  });
+}
+
+function renderTokenData() {
+  const t = computeTokens();
+  document.getElementById('tk-input').textContent = fmt(t.input);
+  document.getElementById('tk-output').textContent = fmt(t.output);
+  document.getElementById('tk-total').textContent = fmt(t.total);
+  document.getElementById('tk-cost').textContent = '$'+t.cost;
+  document.getElementById('tk-avg').textContent = fmt(Math.round(t.total/sessions.length));
+
+  const cats = Object.keys(COLORS), ct = catTokens();
+  const sorted = cats.map(c => ({ c, count: catCounts()[c]||0, tokens: ct[c]||0 })).sort((a,b)=>b.tokens-a.tokens);
+  const totalTok = sorted.reduce((a,r)=>a+r.tokens,0)||1;
+  document.getElementById('token-breakdown-table').innerHTML = `
+    <table class="tbl">
+      <thead><tr><th>Category</th><th>Sessions</th><th>Est. Tokens</th><th>% of Total</th><th>Distribution</th></tr></thead>
+      <tbody>${sorted.map(r => {
+        const col = COLORS[r.c], pct = Math.round(r.tokens/totalTok*100);
+        return `<tr>
+          <td><span class="badge" style="background:${col.bg};color:${col.text}">${EMOJIS[r.c]} ${r.c}</span></td>
+          <td>${r.count}</td>
+          <td style="font-weight:600">${fmt(r.tokens)}</td>
+          <td style="color:var(--muted)">${pct}%</td>
+          <td style="min-width:120px">
+            <div class="token-bar-wrap"><div class="token-bar" style="background:${col.dot};width:${pct}%"></div></div>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+}
+
+function renderTokenCharts() {
+  const t = computeTokens(), cats = Object.keys(COLORS), ct = catTokens();
+  const tc = chartTextColor(), gc = chartGridColor(), bc = chartBorderColor();
+
+  destroyChart('chart-tokens-bar');
+  charts['chart-tokens-bar'] = new Chart(document.getElementById('chart-tokens-bar').getContext('2d'), {
+    type:'bar',
+    data:{ labels:cats, datasets:[{ label:'Tokens', data:cats.map(c=>ct[c]||0), backgroundColor:cats.map(c=>COLORS[c].dot), borderRadius:6 }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{ y:{ beginAtZero:true, ticks:{ font:{size:10}, color:tc, callback:v=>fmt(v) }, grid:{color:gc} }, x:{ ticks:{font:{size:10},color:tc}, grid:{display:false} } }
+    }
+  });
+
+  destroyChart('chart-io-split');
+  charts['chart-io-split'] = new Chart(document.getElementById('chart-io-split').getContext('2d'), {
+    type:'doughnut',
+    data:{ labels:['Input Tokens','Output Tokens'], datasets:[{ data:[t.input,t.output], backgroundColor:['#5865f2','#cc785c'], borderWidth:2, borderColor:bc }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{font:{size:11},padding:12,boxWidth:12,color:tc} } }, cutout:'60%' }
+  });
+}
+
+function renderMachinePage() {
+  const apps = machineGrants.allowedApps || [];
+  const glist = document.getElementById('active-grants-list');
+  if (!apps.length) {
+    glist.innerHTML = `<div class="grant-item no-grant">
+      <div class="grant-app-icon" style="background:linear-gradient(135deg,#e5e7eb,#d1d5db);font-size:18px">🔒</div>
+      <div><div class="grant-name">No apps currently granted</div>
+      <div class="grant-meta">Claude has no active desktop control. Start a task that needs computer use to see grants appear here.</div></div>
+    </div>`;
+  } else {
+    glist.innerHTML = apps.map(a => `
+      <div class="grant-item active-grant">
+        <div class="grant-app-icon">${appEmoji(a.name||a)}</div>
+        <div style="flex:1"><div class="grant-name">${esc(a.name||a)}</div><div class="grant-meta">Tier: ${a.tier||'full'} · Active this session</div></div>
+        <span class="grant-tier gt-${a.tier||'full'}">${a.tier||'full'}</span>
+      </div>`).join('');
+  }
+
+  const flags = machineGrants.grantFlags || {};
+  const flagDefs = [
+    {key:'clipboardRead',  label:'Clipboard Read',    desc:'Claude can read your clipboard contents'},
+    {key:'clipboardWrite', label:'Clipboard Write',   desc:'Claude can write to your clipboard'},
+    {key:'systemKeyCombos',label:'System Key Combos', desc:'Claude can use system-level shortcuts (Alt+F4, etc.)'},
+  ];
+  document.getElementById('flags-list').innerHTML = flagDefs.map(f => {
+    const on = !!flags[f.key];
+    return `<div class="flag-card ${on?'flag-on':'flag-off'}">
+      <div class="flag-dot ${on?'on':'off'}"></div>
+      <div><div class="flag-name">${f.label}</div><div class="flag-desc">${on?'✅ Granted':'⛔ Not granted'} — ${f.desc}</div></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('promo-list').innerHTML = promotions.length
+    ? promotions.map(p => `
+      <div class="promo-card ${p.isNew?'promo-new-card':''}">
+        <div class="promo-icon-lg">${p.icon||'🎁'}</div>
+        <div style="flex:1">
+          <div class="promo-title">${esc(p.title)} ${p.isNew?'<span class="promo-new-badge">NEW</span>':''}</div>
+          <div class="promo-desc">${esc(p.desc)}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">${p.type||''} · ${p.ts||''}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+          ${p.isNew?`<button class="btn btn-sm btn-outline" onclick="markSeen('${p.id}')">Mark seen</button>`:''}
+          <button class="btn btn-sm btn-danger" onclick="deletePromo('${p.id}')">✕</button>
+        </div>
+      </div>`).join('')
+    : '<div class="empty"><span class="empty-icon">🎁</span>No promotions yet.</div>';
+
+  document.getElementById('access-history').innerHTML = accessHistory.length
+    ? `<table class="tbl"><thead><tr><th>Time</th><th>Application</th><th>Tier</th><th>Result</th><th>Reason</th></tr></thead>
+      <tbody>${accessHistory.map(h=>`<tr>
+        <td style="white-space:nowrap;color:var(--muted);font-size:11px">${h.ts}</td>
+        <td style="font-weight:600">${esc(h.app)}</td>
+        <td><span class="perm-tier tier-${h.tier}">${h.tier}</span></td>
+        <td><span class="badge" style="background:${h.result==='granted'?'#dcfce7':'#fee2e2'};color:${h.result==='granted'?'#15803d':'#b91c1c'}">${h.result}</span></td>
+        <td style="color:var(--muted)">${esc(h.reason||'—')}</td>
+      </tr>`).join('')}</tbody></table>`
+    : '<div class="empty"><span class="empty-icon">📋</span>No access history recorded.</div>';
+}
+
+function appEmoji(name) {
+  const n = (name||'').toLowerCase();
+  if (n.includes('chrome')||n.includes('browser')) return '🌐';
+  if (n.includes('notepad')||n.includes('editor')) return '📝';
+  if (n.includes('explorer')||n.includes('file')) return '📁';
+  if (n.includes('claude')) return '🤖';
+  if (n.includes('terminal')||n.includes('cmd')) return '💻';
+  return '🪟';
+}
+
+function renderSessionsTable() {
+  const q = (document.getElementById('search-box')?.value||'').toLowerCase();
+  const cf = document.getElementById('cat-filter')?.value||'';
+  const filtered = sessions.filter(s => (!q||s.name.toLowerCase().includes(q)||s.id.includes(q))&&(!cf||cat(s.name)===cf));
+  if (!filtered.length) { document.getElementById('sess-table-wrap').innerHTML='<div class="empty"><span class="empty-icon">🔍</span>No sessions match.</div>'; return; }
+  document.getElementById('sess-table-wrap').innerHTML = `
+    <table class="tbl"><thead><tr><th>#</th><th>Session Name</th><th>Category</th><th>Est. Tokens</th><th>Session ID</th><th>Status</th></tr></thead>
+    <tbody>${filtered.map((s,i)=>{
+      const c=cat(s.name),col=COLORS[c],tok=TOKEN_EST[c]||1000;
+      return `<tr>
+        <td style="color:var(--muted)">${i+1}</td>
+        <td style="font-weight:600;max-width:260px">${esc(s.name)}</td>
+        <td><span class="badge" style="background:${col.bg};color:${col.text}">${EMOJIS[c]} ${c}</span></td>
+        <td style="font-weight:600;color:var(--purple)">~${fmt(tok)}</td>
+        <td style="color:var(--muted);font-family:monospace;font-size:10px">${s.id.slice(0,22)}…</td>
+        <td><span class="badge" style="background:${s.status==='active'?'#dcfce7':'#f3f4f6'};color:${s.status==='active'?'#15803d':'#6b7280'}">${s.status}</span></td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+function renderPermTable() {
+  const wrap = document.getElementById('perm-wrap');
+  if (!permissions.length) {
+    wrap.innerHTML='<div class="empty"><span class="empty-icon">🔐</span>No permissions logged yet.<br><br><button class="btn btn-primary btn-sm" onclick="openPermModal()">Log First Permission</button></div>';
+    return;
+  }
+  wrap.innerHTML=`<table class="tbl"><thead><tr><th>App</th><th>Tier</th><th>Status</th><th>Reason</th><th>Date</th><th></th></tr></thead>
+    <tbody>${permissions.map(p=>`<tr>
+      <td style="font-weight:600">${esc(p.app)}</td>
+      <td><span class="perm-tier tier-${p.tier}">${p.tier}</span></td>
+      <td><span class="sdot s-${p.status}"></span>${p.status}</td>
+      <td style="color:var(--muted)">${esc(p.reason||'—')}</td>
+      <td style="color:var(--muted);font-size:10px;white-space:nowrap">${p.ts}</td>
+      <td><div style="display:flex;gap:4px">
+        ${p.status==='granted'?`<button class="btn btn-sm btn-outline" onclick="revokePerm('${p.id}')">Revoke</button>`:''}
+        <button class="btn btn-sm btn-danger" onclick="deletePerm('${p.id}')">✕</button>
+      </div></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function renderCategoryCards() {
+  const cc = catCounts(), ct = catTokens(), total = sessions.length||1;
+  document.getElementById('cat-cards').innerHTML = Object.entries(COLORS).map(([c,col])=>{
+    const count=cc[c]||0,tokens=ct[c]||0,pct=Math.round(count/total*100);
+    const examples=sessions.filter(s=>cat(s.name)===c).slice(0,3).map(s=>s.name);
+    return `<div class="card">
+      <div style="font-size:22px;margin-bottom:7px">${EMOJIS[c]}</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:3px">${c}</div>
+      <div style="font-size:24px;font-weight:800;color:${col.dot};margin-bottom:2px">${count}</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:2px">${pct}% of sessions</div>
+      <div style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:8px">~${fmt(tokens)} tokens</div>
+      <div style="background:var(--border);border-radius:4px;height:4px;margin-bottom:10px">
+        <div style="background:${col.dot};width:${pct}%;height:4px;border-radius:4px"></div>
+      </div>
+      ${examples.map(e=>`<div style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">· ${esc(e)}</div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+function openPermModal(){ document.getElementById('modal-perm').classList.add('open'); }
+function openTokenModal(){ document.getElementById('modal-token').classList.add('open'); }
+function openPromoModal(){ document.getElementById('modal-promo').classList.add('open'); }
+function closeModals(){ document.querySelectorAll('.modal-bg').forEach(m=>m.classList.remove('open')); }
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m)closeModals(); }));
+
+function savePerm() {
+  const app = document.getElementById('p-app').value.trim();
+  if (!app){ toast('⚠️ Enter an app name'); return; }
+  const tier=document.getElementById('p-tier').value, status=document.getElementById('p-status').value, reason=document.getElementById('p-reason').value.trim();
+  const ts = new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  permissions.unshift({ id:uid(), app, tier, status, reason, ts });
+  accessHistory.unshift({ ts, app, tier, result:status, reason });
+  saveState(); ['p-app','p-reason'].forEach(id=>document.getElementById(id).value='');
+  closeModals(); renderAll(); toast('🔐 Permission saved!');
+}
+
+function revokePerm(id){ const p=permissions.find(x=>x.id===id); if(p) p.status='revoked'; saveState(); renderAll(); toast('Permission revoked.'); }
+function deletePerm(id){ permissions=permissions.filter(x=>x.id!==id); saveState(); renderAll(); toast('Removed.'); }
+
+function saveTokens() {
+  const inp=parseInt(document.getElementById('t-input').value)||0, out=parseInt(document.getElementById('t-output').value)||0;
+  const label=document.getElementById('t-label').value.trim()||'Manual entry';
+  if (!inp&&!out){ toast('⚠️ Enter at least one value'); return; }
+  tokenOverride={input:inp,output:out,label};
+  saveState(); closeModals(); renderAll(); toast('🪙 Token data saved!');
+}
+
+function savePromo() {
+  const title=document.getElementById('pr-title').value.trim();
+  if (!title){ toast('⚠️ Enter a title'); return; }
+  const desc=document.getElementById('pr-desc').value.trim(), icon=document.getElementById('pr-icon').value.trim()||'🎁', type=document.getElementById('pr-type').value;
+  const ts=new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'});
+  promotions.unshift({ id:uid(), icon, title, desc, type, ts, isNew:true });
+  saveState(); ['pr-title','pr-desc','pr-icon'].forEach(id=>document.getElementById(id).value='');
+  closeModals(); renderAll(); toast('🎁 Promotion added!');
+}
+
+function markSeen(id){ const p=promotions.find(x=>x.id===id); if(p) p.isNew=false; saveState(); renderMachinePage(); }
+function deletePromo(id){ promotions=promotions.filter(x=>x.id!==id); saveState(); renderMachinePage(); toast('Removed.'); }
+
+function switchInnerTab(name) {
+  document.querySelectorAll('.inner-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.inner-page').forEach(p=>p.classList.remove('active'));
+  const tabs=['overview','budget'];
+  document.querySelectorAll('.inner-tab')[tabs.indexOf(name)]?.classList.add('active');
+  document.getElementById('inner-'+name)?.classList.add('active');
+  if (name==='overview') { try { renderTokenCharts(); } catch(e) {} }
+  else if (name==='budget') { try { renderBudgetPage(); } catch(e) {} }
+}
+
+let budgetSettings = { budget: 500000, interval: 5, startTime: null };
+let countdownTimer = null;
+let gaugeChart = null;
+
+const PLAN_KEY = 'ct_plan_v1';
+let planData = { plan:'Pro', sessionPct:41, sessionReset:'3 hr 9 min', weeklyPct:16, weeklyReset:'Thu 3:00 PM', routinesUsed:0, routinesMax:5, updatedAt:Date.now() };
+
+function loadPlanData() {
+  try { const s=JSON.parse(localStorage.getItem(PLAN_KEY)||'{}'); if(s.plan) planData={...planData,...s}; } catch(e) {}
+}
+
+function savePlanUsage() {
+  planData.plan         = document.getElementById('pl-plan').value;
+  planData.sessionPct   = parseInt(document.getElementById('pl-sess-pct').value)   || planData.sessionPct;
+  planData.sessionReset = document.getElementById('pl-sess-reset').value.trim()     || planData.sessionReset;
+  planData.weeklyPct    = parseInt(document.getElementById('pl-week-pct').value)    || planData.weeklyPct;
+  planData.weeklyReset  = document.getElementById('pl-week-reset').value.trim()     || planData.weeklyReset;
+  planData.routinesUsed = parseInt(document.getElementById('pl-routines-used').value) ?? planData.routinesUsed;
+  planData.routinesMax  = parseInt(document.getElementById('pl-routines-max').value) || planData.routinesMax;
+  planData.updatedAt    = Date.now();
+  localStorage.setItem(PLAN_KEY, JSON.stringify(planData));
+  closeModals(); renderPlanCard(); toast('✅ Plan usage updated!');
+}
+
+function openPlanModal() {
+  document.getElementById('pl-plan').value          = planData.plan;
+  document.getElementById('pl-sess-pct').value      = planData.sessionPct;
+  document.getElementById('pl-sess-reset').value    = planData.sessionReset;
+  document.getElementById('pl-week-pct').value      = planData.weeklyPct;
+  document.getElementById('pl-week-reset').value    = planData.weeklyReset;
+  document.getElementById('pl-routines-used').value = planData.routinesUsed;
+  document.getElementById('pl-routines-max').value  = planData.routinesMax;
+  document.getElementById('modal-plan').classList.add('open');
+}
+
+function renderPlanCard() {
+  const d=planData, sp=Math.min(100,d.sessionPct), wp=Math.min(100,d.weeklyPct);
+  const rp=d.routinesMax>0?Math.min(100,Math.round(d.routinesUsed/d.routinesMax*100)):0;
+  document.getElementById('plan-name-badge').textContent   = d.plan;
+  document.getElementById('plan-session-pct').textContent  = sp+'% used';
+  document.getElementById('plan-session-reset').textContent= 'Resets in '+d.sessionReset;
+  document.getElementById('plan-weekly-pct').textContent   = wp+'% used';
+  document.getElementById('plan-weekly-reset').textContent = 'Resets '+d.weeklyReset;
+  document.getElementById('plan-routines-used').textContent= d.routinesUsed;
+  document.getElementById('plan-routines-max').textContent = d.routinesMax;
+  document.getElementById('plan-routines-sub').textContent = d.routinesUsed===0?"You haven't run any routines yet":d.routinesUsed+' of '+d.routinesMax+' used today';
+  const barClass=pct=>pct>=90?'plan-bar-fill crit':pct>=70?'plan-bar-fill warn':'plan-bar-fill';
+  const sb=document.getElementById('plan-session-bar'); sb.className=barClass(sp); sb.style.width=sp+'%';
+  const wb=document.getElementById('plan-weekly-bar');  wb.className=barClass(wp); wb.style.width=wp+'%';
+  const rb=document.getElementById('plan-routines-bar');rb.className=barClass(rp); rb.style.width=rp+'%';
+  document.getElementById('plan-sess-week').textContent=sessions.length;
+  const mins=Math.floor((Date.now()-d.updatedAt)/60000);
+  document.getElementById('plan-last-updated').textContent='⟳ Last updated: '+(mins<1?'just now':mins<60?mins+' min ago':Math.floor(mins/60)+' hr ago');
+}
+
+let planCountdownTimer = null;
+function startPlanCountdown() {
+  if (planCountdownTimer) clearInterval(planCountdownTimer);
+  updatePlanCountdown();
+  planCountdownTimer = setInterval(updatePlanCountdown, 1000);
+}
+
+function updatePlanCountdown() {
+  const txt=planData.sessionReset||'';
+  const hrM=txt.match(/(\d+)\s*hr/), minM=txt.match(/(\d+)\s*min/), secM=txt.match(/(\d+)\s*sec/);
+  const totalSec=(parseInt(hrM?.[1])||0)*3600+(parseInt(minM?.[1])||0)*60+(parseInt(secM?.[1])||0);
+  if (!totalSec) { document.getElementById('plan-sess-countdown').textContent=planData.sessionReset||'—'; document.getElementById('plan-sess-countdown-sub').textContent='As reported by Claude'; return; }
+  const elapsed=Math.floor((Date.now()-planData.updatedAt)/1000), remaining=Math.max(0,totalSec-elapsed);
+  const h=Math.floor(remaining/3600), m=Math.floor((remaining%3600)/60), s=remaining%60, pad=n=>String(n).padStart(2,'0');
+  document.getElementById('plan-sess-countdown').textContent=h>0?`${h}h ${pad(m)}m ${pad(s)}s`:`${pad(m)}m ${pad(s)}s`;
+  document.getElementById('plan-sess-countdown-sub').textContent=remaining===0?'🔄 Reset now!':'Live countdown';
+}
+
+function loadBudgetSettings() {
+  try { const s=JSON.parse(localStorage.getItem('ct_budget_v1')||'{}'); budgetSettings={budget:s.budget||500000,interval:s.interval||5,startTime:s.startTime||null}; } catch(e) {}
+}
+
+function saveBudgetSettings() {
+  const sel=document.getElementById('b-budget').value, custom=parseInt(document.getElementById('b-custom').value)||0;
+  const interval=parseInt(document.getElementById('b-interval').value)||5, startRaw=document.getElementById('b-start').value;
+  budgetSettings.budget=sel==='custom'?(custom||500000):parseInt(sel);
+  budgetSettings.interval=interval;
+  budgetSettings.startTime=startRaw?new Date(startRaw).getTime():Date.now();
+  localStorage.setItem('ct_budget_v1',JSON.stringify(budgetSettings));
+  renderBudgetPage(); startCountdown(); toast('✅ Budget settings saved!');
+}
+
+function renderBudgetPage() {
+  const t=computeTokens(), used=t.total, avail=budgetSettings.budget, remaining=Math.max(0,avail-used), pct=Math.min(100,Math.round((used/avail)*100));
+  const statusClass=pct>=90?'budget-crit':pct>=70?'budget-warn':'budget-ok';
+  const statusMsg=pct>=90?'🔴 Critical — almost at limit':pct>=70?'🟡 Warning — 70%+ used':'🟢 Good — plenty remaining';
+
+  document.getElementById('b-interval').value=String(budgetSettings.interval);
+  const knownBudgets=['100000','500000','1000000','5000000'];
+  if (knownBudgets.includes(String(budgetSettings.budget))) { document.getElementById('b-budget').value=String(budgetSettings.budget); }
+  else { document.getElementById('b-budget').value='custom'; document.getElementById('b-custom').value=budgetSettings.budget; }
+  if (budgetSettings.startTime) { const d=new Date(budgetSettings.startTime); document.getElementById('b-start').value=d.toISOString().slice(0,16); }
+
+  document.getElementById('budget-breakdown').innerHTML=`
+    <div class="${statusClass} budget-status"><span>${statusMsg}</span><strong>${pct}% used</strong></div>
+    ${budgetRow('Used',used,avail,'#cc785c')}
+    ${budgetRow('Remaining',remaining,avail,'#22c55e')}
+    ${budgetRow('Budget',avail,avail,'#5865f2')}
+    <div style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px"><span>0</span><span>${fmt(avail/2)}</span><span>${fmt(avail)}</span></div>
+      <div class="token-bar-wrap" style="height:12px"><div class="token-bar" style="background:${pct>=90?'var(--red)':pct>=70?'var(--yellow)':'var(--green)'};width:${pct}%;height:12px"></div></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right">${fmt(remaining)} tokens left of ${fmt(avail)} budget</div>
+    </div>`;
+
+  if (gaugeChart) { gaugeChart.destroy(); gaugeChart=null; }
+  const ctx=document.getElementById('chart-gauge').getContext('2d');
+  const gaugeColor=pct>=90?'#ef4444':pct>=70?'#f59e0b':'#22c55e', gaugeTrack=isDark()?'#2a2d3a':'#e4e7ec';
+  gaugeChart=new Chart(ctx,{type:'doughnut',data:{datasets:[{data:[pct,100-pct],backgroundColor:[gaugeColor,gaugeTrack],borderWidth:0}]},options:{responsive:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}},rotation:-90,circumference:360,animation:{duration:700}}});
+  document.getElementById('gauge-pct-text').textContent=pct+'%';
+  document.getElementById('gauge-pct-text').style.color=gaugeColor;
+  document.getElementById('gauge-sub').textContent=fmt(used)+' used of '+fmt(avail);
+  document.getElementById('gauge-label').textContent=fmt(remaining)+' tokens remaining';
+  startCountdown();
+}
+
+function budgetRow(label,val,total,color) {
+  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px">
+    <span style="color:var(--muted)">${label}</span>
+    <div style="display:flex;align-items:center;gap:8px"><span style="font-weight:700;color:${color}">${fmt(val)}</span><span style="font-size:10px;color:var(--muted)">(${Math.round(val/total*100)}%)</span></div>
+  </div>`;
+}
+
+function startCountdown() {
+  if (countdownTimer) clearInterval(countdownTimer);
+  if (!budgetSettings.startTime) budgetSettings.startTime=Date.now();
+  updateCountdown();
+  countdownTimer=setInterval(updateCountdown,1000);
+}
+
+function updateCountdown() {
+  const intervalMs=budgetSettings.interval*60*60*1000, startMs=budgetSettings.startTime, nowMs=Date.now();
+  const elapsed=nowMs-startMs, resetAt=startMs+Math.ceil(elapsed/intervalMs)*intervalMs, remaining=Math.max(0,resetAt-nowMs);
+  const totalH=Math.floor(remaining/3600000), totalM=Math.floor((remaining%3600000)/60000), totalS=Math.floor((remaining%60000)/1000);
+  const elapsedPct=Math.min(100,Math.round((elapsed%intervalMs)/intervalMs*100)), pad=n=>String(n).padStart(2,'0');
+  document.getElementById('cd-display').textContent=`${pad(totalH)}:${pad(totalM)}:${pad(totalS)}`;
+  document.getElementById('cd-h').textContent=pad(totalH);
+  document.getElementById('cd-m').textContent=pad(totalM);
+  document.getElementById('cd-s').textContent=pad(totalS);
+  document.getElementById('cd-pct').textContent=elapsedPct+'%';
+  const resetDate=new Date(resetAt);
+  document.getElementById('cd-sub').textContent=`Resets at ${resetDate.toLocaleTimeString()} · ${budgetSettings.interval}h window · ${elapsedPct}% of period elapsed`;
+}
+
+const TAB_NAMES=['dashboard','tokens','sessions','machine','permissions','categories'];
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const i=TAB_NAMES.indexOf(name);
+  document.querySelectorAll('.tab')[i]?.classList.add('active');
+  document.getElementById('page-'+name)?.classList.add('active');
+  if (name==='dashboard') { try { renderDashboardCharts(); } catch(e) {} }
+  else if (name==='tokens') {
+    const inner=document.querySelector('.inner-page.active')?.id||'inner-overview';
+    if (inner==='inner-overview') { try { renderTokenCharts(); } catch(e) {} }
+  }
+}
+
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2400); }
+function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+
+function toggleDark() {
+  const dark=document.body.classList.toggle('dark');
+  document.getElementById('dark-label').textContent=dark?'🌙':'☀️';
+  localStorage.setItem('ct_dark',dark?'1':'0');
+  renderVisibleCharts();
+}
+if (localStorage.getItem('ct_dark')==='1') {
+  document.body.classList.add('dark');
+  const lbl=document.getElementById('dark-label');
+  if (lbl) lbl.textContent='🌙';
+}
+
+loadState();
+loadPlanData();
+loadBudgetSettings();
+renderAll();
+renderPlanCard();
+startCountdown();
+startPlanCountdown();
+document.getElementById('last-refresh').textContent='Loaded '+new Date().toLocaleTimeString();
+
+setTimeout(async()=>{
+  await refreshGrants();
+  await refreshSessions();
+  renderAll();
+  document.getElementById('last-refresh').textContent='Updated '+new Date().toLocaleTimeString();
+},600);
+</script>
+</body>
+</html>
