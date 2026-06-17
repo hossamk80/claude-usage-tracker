@@ -40,13 +40,13 @@
 ### Option 1 — GitHub Pages (Recommended)
 Just open the live link:
 ```
-https://YOUR_USERNAME.github.io/claude-usage-tracker
+https://hossamk80.github.io/claude-usage-tracker
 ```
 
 ### Option 2 — Run Locally
 No build tools needed. Simply open the file in your browser:
 ```bash
-git clone https://github.com/YOUR_USERNAME/claude-usage-tracker.git
+git clone https://github.com/hossamk80/claude-usage-tracker.git
 cd claude-usage-tracker
 # Open index.html in your browser
 ```
